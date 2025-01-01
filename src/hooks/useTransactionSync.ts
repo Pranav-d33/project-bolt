@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Transaction } from '../types/transaction';
 import { fetchSolanaTransactions } from '../services/api/solana';
+import { fetchEthereumTransactions } from '../services/api/ethereum';
 import { prefetchCommonTokenPrices } from '../services/api/coingecko';
 
 interface TransactionSyncState {
@@ -8,6 +9,10 @@ interface TransactionSyncState {
   isLoading: boolean;
   error: string | null;
   progress: number;
+  networkStatus: {
+    solana: 'idle' | 'loading' | 'success' | 'error';
+    ethereum: 'idle' | 'loading' | 'success' | 'error';
+  };
 }
 
 export function useTransactionSync() {
@@ -16,40 +21,90 @@ export function useTransactionSync() {
     isLoading: false,
     error: null,
     progress: 0,
+    networkStatus: {
+      solana: 'idle',
+      ethereum: 'idle'
+    }
   });
 
   const syncTransactions = useCallback(async (walletAddresses: Record<string, string>) => {
-    setState(prev => ({ ...prev, isLoading: true, error: null, progress: 0 }));
+    setState(prev => ({ 
+      ...prev, 
+      isLoading: true, 
+      error: null, 
+      progress: 0,
+      networkStatus: { solana: 'idle', ethereum: 'idle' }
+    }));
+
     const allTransactions: Transaction[] = [];
 
     try {
-      // Validate inputs
-      if (!walletAddresses || typeof walletAddresses !== 'object') {
-        throw new Error('Invalid wallet addresses provided');
-      }
-
       // Pre-fetch common token prices
       await prefetchCommonTokenPrices();
 
-      if (walletAddresses.phantom) {
-        console.log('Fetching Solana transactions for address:', walletAddresses.phantom);
-        try {
-          // Validate Solana address
-          if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(walletAddresses.phantom)) {
-            throw new Error('Invalid Solana address format');
-          }
+      // Parallel fetching for both networks
+      const fetchPromises: Promise<void>[] = [];
 
-          const solTxs = await fetchSolanaTransactions(walletAddresses.phantom);
-          console.log('Fetched Solana transactions:', solTxs.length);
-          allTransactions.push(...solTxs);
-          setState(prev => ({ ...prev, progress: 50 }));
-        } catch (error) {
-          console.error('Error fetching Solana transactions:', error);
-          throw error;
-        }
+      if (walletAddresses.phantom) {
+        setState(prev => ({
+          ...prev,
+          networkStatus: { ...prev.networkStatus, solana: 'loading' }
+        }));
+
+        fetchPromises.push(
+          fetchSolanaTransactions(walletAddresses.phantom)
+            .then(txs => {
+              console.log('Fetched Solana transactions:', txs.length);
+              allTransactions.push(...txs);
+              setState(prev => ({
+                ...prev,
+                networkStatus: { ...prev.networkStatus, solana: 'success' },
+                progress: prev.progress + 50
+              }));
+            })
+            .catch(error => {
+              console.error('Error fetching Solana transactions:', error);
+              setState(prev => ({
+                ...prev,
+                networkStatus: { ...prev.networkStatus, solana: 'error' }
+              }));
+              throw error;
+            })
+        );
       }
 
-      // Sort transactions by timestamp
+      if (walletAddresses.metamask) {
+        setState(prev => ({
+          ...prev,
+          networkStatus: { ...prev.networkStatus, ethereum: 'loading' }
+        }));
+
+        fetchPromises.push(
+          fetchEthereumTransactions(walletAddresses.metamask)
+            .then(txs => {
+              console.log('Fetched Ethereum transactions:', txs.length);
+              allTransactions.push(...txs);
+              setState(prev => ({
+                ...prev,
+                networkStatus: { ...prev.networkStatus, ethereum: 'success' },
+                progress: prev.progress + 50
+              }));
+            })
+            .catch(error => {
+              console.error('Error fetching Ethereum transactions:', error);
+              setState(prev => ({
+                ...prev,
+                networkStatus: { ...prev.networkStatus, ethereum: 'error' }
+              }));
+              throw error;
+            })
+        );
+      }
+
+      // Wait for all fetches to complete
+      await Promise.allSettled(fetchPromises);
+
+      // Sort all transactions by timestamp
       allTransactions.sort((a, b) => 
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       );

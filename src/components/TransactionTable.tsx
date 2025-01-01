@@ -10,6 +10,41 @@ interface TransactionTableProps {
   onExport: (type: 'csv' | 'pdf') => void;
 }
 
+function SwapRow({ transaction }: { transaction: Transaction }) {
+  if (!transaction.details) return null;
+  const { fromToken, toToken, fromAmount, toAmount, fromValueUsd, toValueUsd } = transaction.details;
+
+  return (
+    <tr className="hover:bg-white/[0.03] transition-colors duration-200">
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+        {format(new Date(transaction.timestamp), 'dd MMM yyyy HH:mm')}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium backdrop-blur-sm
+          bg-purple-400/10 text-purple-400 ring-1 ring-purple-400/20">
+          Swap
+        </span>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm">
+        <div className="flex items-center space-x-2">
+          <span className="text-gray-300">{fromAmount.toFixed(4)} {fromToken}</span>
+          <span className="text-gray-500">→</span>
+          <span className="text-gray-300">{toAmount.toFixed(4)} {toToken}</span>
+        </div>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+        ${fromValueUsd.toFixed(2)} → ${toValueUsd.toFixed(2)}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+        ₹{(fromValueUsd * 83).toFixed(2)} → ₹{(toValueUsd * 83).toFixed(2)}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+        {transaction.network}
+      </td>
+    </tr>
+  );
+}
+
 export function TransactionTable({
   transactions,
   isLoading,
@@ -100,37 +135,38 @@ export function TransactionTable({
           </thead>
           <tbody className="divide-y divide-white/5 bg-gradient-to-b from-transparent to-white/[0.02]">
             {transactions.map((transaction) => (
-              <tr 
-                key={transaction.hash} 
-                className="hover:bg-white/[0.03] transition-colors duration-200"
-              >
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {format(new Date(transaction.timestamp), 'dd MMM yyyy HH:mm')}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium backdrop-blur-sm
-                      ${transaction.direction === 'inbound'
-                        ? 'bg-green-400/10 text-green-400 ring-1 ring-green-400/20'
-                        : 'bg-red-400/10 text-red-400 ring-1 ring-red-400/20'
-                      }`}
-                  >
-                    {transaction.direction === 'inbound' ? 'Received' : 'Sent'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {transaction.asset.symbol}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {parseFloat(transaction.amount).toFixed(8)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  ₹{parseFloat(transaction.amountInr).toLocaleString('en-IN')}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {transaction.network}
-                </td>
-              </tr>
+              transaction.type === 'swap' ? (
+                <SwapRow key={transaction.hash} transaction={transaction} />
+              ) : (
+                <tr key={transaction.hash} className="hover:bg-white/[0.03] transition-colors duration-200">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {format(new Date(transaction.timestamp), 'dd MMM yyyy HH:mm')}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium backdrop-blur-sm
+                        ${transaction.direction === 'inbound'
+                          ? 'bg-green-400/10 text-green-400 ring-1 ring-green-400/20'
+                          : 'bg-red-400/10 text-red-400 ring-1 ring-red-400/20'
+                        }`}
+                    >
+                      {transaction.direction === 'inbound' ? 'Received' : 'Sent'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {transaction.asset.symbol}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {parseFloat(transaction.amount).toFixed(8)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    ₹{parseFloat(transaction.amountInr).toLocaleString('en-IN')}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {transaction.network}
+                  </td>
+                </tr>
+              )
             ))}
           </tbody>
         </table>

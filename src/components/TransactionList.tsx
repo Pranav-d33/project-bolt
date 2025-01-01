@@ -3,10 +3,11 @@ import { useTransactionSync } from '../hooks/useTransactionSync';
 import { TransactionTable } from './TransactionTable';
 import { useWalletStore } from '../store/walletStore';
 import { Loader2 } from 'lucide-react';
+import { NetworkStatus } from './NetworkStatus';
 
 export function TransactionList() {
   const { activeConnections, addresses } = useWalletStore();
-  const { transactions, isLoading, error, progress, syncTransactions } = useTransactionSync();
+  const { transactions, isLoading, error, progress, syncTransactions, networkStatus } = useTransactionSync();
   const [syncAttempted, setSyncAttempted] = useState(false);
 
   useEffect(() => {
@@ -37,18 +38,24 @@ export function TransactionList() {
     <div className="space-y-4">
       {isLoading && (
         <div className="backdrop-blur-lg bg-white/[0.02] rounded-2xl p-4 border border-white/10">
-          <div className="flex items-center justify-center gap-3">
-            <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
-            <div className="space-y-2">
-              <p className="text-sm text-gray-400">
-                Syncing transactions... {progress.toFixed(0)}%
-              </p>
-              <div className="w-64 h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-blue-500 transition-all duration-500" 
-                  style={{ width: `${progress}%` }}
-                />
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-center gap-3">
+              <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
+              <div className="space-y-2">
+                <p className="text-sm text-gray-400">
+                  Syncing transactions... {progress.toFixed(0)}%
+                </p>
+                <div className="w-64 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-blue-500 transition-all duration-500" 
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
               </div>
+            </div>
+            <div className="flex justify-center gap-6">
+              <NetworkStatus network="Solana" status={networkStatus.solana} />
+              <NetworkStatus network="Ethereum" status={networkStatus.ethereum} />
             </div>
           </div>
         </div>

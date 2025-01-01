@@ -119,6 +119,42 @@ function detectSwapTokens(
   };
 }
 
+function isSwapTransaction(tx: ParsedTransactionWithMeta): boolean {
+  // Check program IDs for common DEXes
+  const programIds = tx.transaction.message.accountKeys.map(key => key.toString());
+  const knownDexes = [
+    'JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB', // Jupiter
+    '9W959DqEETiGZocYWCQPaJ6sBmUzgfxXfqGeTEdp3aQP', // Orca
+    'SwaPpA9LAaLfeLi3a68M4DjnLqgtticKg6CnyNwgAC8',  // Raydium
+  ];
+
+  if (programIds.some(id => knownDexes.includes(id))) {
+    return true;
+  }
+
+  // Check log messages
+  return tx.meta?.logMessages?.some(msg => 
+    msg.toLowerCase().includes('swap') || 
+    msg.toLowerCase().includes('exchange') ||
+    msg.toLowerCase().includes('trade')
+  ) ?? false;
+}
+
+function getSwapProtocol(tx: ParsedTransactionWithMeta): string {
+  const programIds = tx.transaction.message.accountKeys.map(key => key.toString());
+  
+  if (programIds.includes('JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB')) {
+    return 'Jupiter';
+  }
+  if (programIds.includes('9W959DqEETiGZocYWCQPaJ6sBmUzgfxXfqGeTEdp3aQP')) {
+    return 'Orca';
+  }
+  if (programIds.includes('SwaPpA9LAaLfeLi3a68M4DjnLqgtticKg6CnyNwgAC8')) {
+    return 'Raydium';
+  }
+  return 'Unknown DEX';
+}
+
 export async function parseTransaction(
   tx: ParsedTransactionWithMeta,
   pubKey: PublicKey
@@ -132,14 +168,8 @@ export async function parseTransaction(
     const solTransfer = findSolTransfer(tx, pubKey);
     const timestamp = tx.blockTime || Math.floor(Date.now() / 1000);
 
-    // Check if this is a swap transaction
-    const isSwap = tx.meta.logMessages?.some(msg => 
-      msg.toLowerCase().includes('swap') || 
-      msg.toLowerCase().includes('exchange') ||
-      msg.toLowerCase().includes('trade')
-    );
-
-    if (isSwap && tokenTransfers.length > 0) {
+    // Check for swap first
+    if (isSwapTransaction(tx) && tokenTransfers.length > 0) {
       const { fromToken, toToken, fromAmount, toAmount, fromMint, toMint } = 
         await detectSwapDetails(tx, tokenTransfers, timestamp);
 
@@ -178,7 +208,11 @@ export async function parseTransaction(
           toValueUsd: toValueUSD,
           fromValueInr: fromValueINR,
           toValueInr: toValueINR,
-        }
+          fromTokenAddress: fromMint,
+          toTokenAddress: toMint,
+          protocol: getSwapProtocol(tx)
+        },
+        raw: tx // For debugging
       };
     }
 

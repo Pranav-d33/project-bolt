@@ -13,6 +13,9 @@ export interface SwapDetails {
   toValueUsd: number;
   fromValueInr: number;
   toValueInr: number;
+  fromTokenAddress: string;
+  toTokenAddress: string;
+  protocol?: string;
 }
 
 export interface Transaction {
@@ -28,6 +31,7 @@ export interface Transaction {
   network: string;
   type?: 'transfer' | 'swap';
   details?: SwapDetails;
+  raw?: any; // For debugging
 }
 
 export interface TransactionFilters {

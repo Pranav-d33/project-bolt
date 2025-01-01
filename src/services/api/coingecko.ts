@@ -11,6 +11,12 @@ const COINGECKO_ID_MAP: Record<string, string> = {
   'RLBxxFkseAZ4RgJH3Sqn8jXxhmGoz9jWxDNJMh8pL7a': 'raydium',
   '7i5KKsX2weiTkry7jA4ZwSuXGhs5eJBEjY8vVxR4mFNd': 'stepn',
   'AFbX8oGjGpmVFywbVouvhQSRmiW2aR1mohfahi4Y2AdB': 'gst',
+  'ethereum': 'ethereum',
+  '0xdac17f958d2ee523a2206206994597c13d831ec7': 'tether',
+  '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': 'usd-coin',
+  '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599': 'wrapped-bitcoin',
+  '0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0': 'matic-network',
+  '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984': 'uniswap',
 };
 
 export interface TokenPrice {
