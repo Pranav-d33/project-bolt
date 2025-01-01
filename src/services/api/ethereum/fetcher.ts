@@ -1,7 +1,8 @@
 import { Transaction } from '../../../types/transaction';
 import { getHistoricalTokenPrice } from '../coingecko';
+import { getEnvVar } from '../../../utils/env';
 
-const ETHERSCAN_API_KEY = 'YOUR_ETHERSCAN_API_KEY'; // You'll need to replace this
+const ETHERSCAN_API_KEY = getEnvVar('VITE_ETHERSCAN_API_KEY');
 const ETHERSCAN_API = 'https://api.etherscan.io/api';
 
 interface EtherscanTransaction {

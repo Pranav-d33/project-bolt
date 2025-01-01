@@ -1,5 +1,7 @@
+import { getEnvVar } from '../../utils/env';
+
 const COINGECKO_API = 'https://api.coingecko.com/api/v3';
-const COINGECKO_API_KEY = 'CG-f4obD8oUJN8m8hQc4CMmzeQW';
+const COINGECKO_API_KEY = getEnvVar('VITE_COINGECKO_API_KEY');
 
 // Map Solana token addresses to CoinGecko IDs
 const COINGECKO_ID_MAP: Record<string, string> = {
